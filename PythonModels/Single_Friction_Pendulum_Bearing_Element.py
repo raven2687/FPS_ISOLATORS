@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import os
 from units import SI_m_units as U
 from scipy.io import loadmat
+from OpenSees_Solvers import Solve_System
 
 ##############################################################################
 # Load Register
@@ -24,7 +25,7 @@ from scipy.io import loadmat
 Reg_Concepcion = loadmat('CONCEPCION_MAULE_2010.mat')
 dt=Reg_Concepcion['Dt']['Ch1'][0][0][0][0]
 Acc1=Reg_Concepcion['Acc']['Ch1'][0][0]*U.cm/U.sec**2
-
+npts=Acc1.size
 ##############################################################################
 # Create model
 ##############################################################################
@@ -117,7 +118,7 @@ fi=1/Ti
 # set time series to be passed to uniform excitation
 Factor = 1
 tsTag=2
-ops.timeSeries('Path', tsTag,'-dt',dt, '-values',Acc1, '-factor', Factor) 
+ops.timeSeries('Path', tsTag,'-dt',dt, '-values',*Acc1, '-factor', Factor) 
 # Define where and how (pattern tag, dof) acceleration is applied
 ops.pattern('UniformExcitation', 2, 1, '-accel', 2)	
 ops.pattern('UniformExcitation', 3, 2, '-accel', 3)
@@ -139,7 +140,8 @@ ops.system('BandGeneral')
 # create the constraint handler
 ops.constraints('Plain')
 # create the convergence test
-ops.test('NormDispIncr',1e-12,100)
+Tol=1.0e-12
+ops.test('NormDispIncr',Tol,100)
 
 # create the solution algorithm
 ops.algorithm('Newton');
@@ -151,7 +153,9 @@ ops.analysis('Transient')
 # ------------------------------
 # End of analysis generation
 # ------------------------------
-
+dtAna=dt; dtMin=1.0e-8; dtMax=dtAna; tFinal=npts*dt
+tCurrent = ops.getTime(); ok=0; timeu2=[0.0]; u2=[0.0]
+Solve_System(dt,dtAna,dtMin,dtMax,ok,tCurrent,tFinal,Tol,timeu2,u2)
 
 
 
