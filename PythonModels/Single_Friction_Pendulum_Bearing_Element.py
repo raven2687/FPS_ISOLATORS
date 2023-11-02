@@ -24,7 +24,9 @@ from OpenSees_Solvers import Solve_System
 ##############################################################################
 Reg_Concepcion = loadmat('CONCEPCION_MAULE_2010.mat')
 dt=Reg_Concepcion['Dt']['Ch1'][0][0][0][0]
-Acc1=Reg_Concepcion['Acc']['Ch1'][0][0]*U.cm/U.sec**2
+Acc1=Reg_Concepcion['Acc']['Ch1'][0][0][0]*U.cm/U.sec**2
+Acc2=Reg_Concepcion['Acc']['Ch2'][0][0][0]*U.cm/U.sec**2
+
 npts=Acc1.size
 ##############################################################################
 # Create model
@@ -119,9 +121,11 @@ fi=1/Ti
 Factor = 1
 tsTag=2
 ops.timeSeries('Path', tsTag,'-dt',dt, '-values',*Acc1, '-factor', Factor) 
+tsTag=3
+ops.timeSeries('Path', tsTag,'-dt',dt, '-values',*Acc2, '-factor', Factor) 
 # Define where and how (pattern tag, dof) acceleration is applied
-ops.pattern('UniformExcitation', 2, 1, '-accel', 2)	
-ops.pattern('UniformExcitation', 3, 2, '-accel', 3)
+ops.pattern("UniformExcitation", 2, 1, "-accel", 2)
+ops.pattern("UniformExcitation", 3, 2, "-accel", 3)
 
 # calculate the Rayleigh damping factors for nodes & elements
 alphaM=0.05;    # mass proportional damping;       D = alphaM*M
@@ -149,6 +153,17 @@ ops.algorithm('Newton');
 ops.integrator('Newmark',0.5,0.25)
 # create the analysis object
 ops.analysis('Transient')
+
+
+ok = ops.analyze(npts, dt)
+
+if (ok != 0):
+    print("analysis FAILED")
+else:
+    print("analysis SUCCESSFUL")
+    
+    
+u2=ops.nodeDisp(2,1)
 
 # ------------------------------
 # End of analysis generation
