@@ -22,6 +22,8 @@ from scipy.io import loadmat
 # Load Register
 ##############################################################################
 Reg_Concepcion = loadmat('CONCEPCION_MAULE_2010.mat')
+dt=Reg_Concepcion['Dt']['Ch1'][0][0][0][0]
+Acc1=Reg_Concepcion['Acc']['Ch1'][0][0]*U.cm/U.sec**2
 
 ##############################################################################
 # Create model
@@ -97,6 +99,66 @@ ops.analysis('Static')
 ops.analyze(10)
 # set the gravity loads to be constant & reset the time in the domain
 ops.loadConst('-time',0.0);
+
+# --------------------------------
+# Perform an eigenvalue analysis
+# --------------------------------
+lambda_i = ops.eigen('-fullGenLapack', 2)
+omega=np.sqrt(lambda_i)
+Ti=2*np.pi/omega
+fi=1/Ti
+
+# ------------------------------
+# Start of model generation
+# ------------------------------
+
+# Define dynamic loads
+# --------------------
+# set time series to be passed to uniform excitation
+Factor = 1
+tsTag=2
+ops.timeSeries('Path', tsTag,'-dt',dt, '-values',Acc1, '-factor', Factor) 
+# Define where and how (pattern tag, dof) acceleration is applied
+ops.pattern('UniformExcitation', 2, 1, '-accel', 2)	
+ops.pattern('UniformExcitation', 3, 2, '-accel', 3)
+
+# calculate the Rayleigh damping factors for nodes & elements
+alphaM=0.05;    # mass proportional damping;       D = alphaM*M
+betaK=0.0;      # stiffness proportional damping;  D = betaK*Kcurrent
+betaKinit=0.0;  # stiffness proportional damping;  D = beatKinit*Kinit
+betaKcomm=0.0;  # stiffness proportional damping;  D = betaKcomm*KlastCommit
+ops.rayleigh(alphaM, betaK, betaKinit, betaKcomm)
+
+# ------------------------------
+# Start of analysis generation
+# ------------------------------
+# create the DOF numberer
+ops.numberer('Plain')
+# create the system of equation
+ops.system('BandGeneral')
+# create the constraint handler
+ops.constraints('Plain')
+# create the convergence test
+ops.test('NormDispIncr',1e-12,100)
+
+# create the solution algorithm
+ops.algorithm('Newton');
+# create the integration scheme
+ops.integrator('Newmark',0.5,0.25)
+# create the analysis object
+ops.analysis('Transient')
+
+# ------------------------------
+# End of analysis generation
+# ------------------------------
+
+
+
+
+
+
+
+
 
 
 
