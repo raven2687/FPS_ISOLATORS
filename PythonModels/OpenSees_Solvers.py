@@ -16,7 +16,7 @@ from units import SI_m_units as U
 from scipy.io import loadmat
 
 
-def Solve_System(dt,dtAna,dtMin,dtMax,ok,tCurrent,tFinal,Tol,timeu2,u2):
+def Solve_System(dt,dtAna,dtMin,dtMax,ok,tCurrent,tFinal,Tol):
     test = {1:'NormDispIncr', 2: 'RelativeEnergyIncr', 4: 'RelativeNormUnbalance',5: 'RelativeNormDispIncr', 6: 'NormUnbalance'}
     algorithm = {1:'KrylovNewton', 2: 'SecantNewton' , 4: 'RaphsonNewton',5: 'PeriodicNewton', 6: 'BFGS', 7: 'Broyden', 8: 'NewtonLineSearch'}
     while ok==0 and tCurrent<tFinal:    
@@ -39,20 +39,16 @@ def Solve_System(dt,dtAna,dtMin,dtMax,ok,tCurrent,tFinal,Tol,timeu2,u2):
                             tCurrent = ops.getTime()
                             ops.algorithm('Newton')
                             print('t=',tCurrent,'sec')
-                            timeu2.append(tCurrent)
-                            u2.append(ops.nodeDisp(2,1))
+                            
                             if dtAna*2<=dtMax:
                                 dtAna=dtAna*2
                                 print('INCREASING time step size (dtNew=',dtAna,')')
                     if ok!=0:
                         print('Change Algorithm')
                         dtAna=dt
-                        
         else:
             tCurrent = ops.getTime()
             print('t=',tCurrent,'sec')
-            timeu2.append(tCurrent)
-            u2.append(ops.nodeDisp(2,1))
             if dtAna*2<=dtMax:
                 dtAna=dtAna*2
                 print('INCREASING time step size (dtNew=',dtAna,')')
@@ -61,4 +57,4 @@ def Solve_System(dt,dtAna,dtMin,dtMax,ok,tCurrent,tFinal,Tol,timeu2,u2):
         print(f'Model Failed (time={tCurrent})')
     else:
         print('Response-history analysis completed')
-    return u2,timeu2
+    return 
