@@ -34,6 +34,7 @@ dt=Reg_Concepcion['Dt']['Ch1'][0][0][0][0]
 Acc1=Reg_Concepcion['Acc']['Ch1'][0][0][0]*U.cm/U.sec**2
 Acc2=Reg_Concepcion['Acc']['Ch2'][0][0][0]*U.cm/U.sec**2
 npts=Acc1.size
+Time=np.arange(0,npts*dt,dt)
 
 ##############################################################################
 # Create model
@@ -141,18 +142,18 @@ ops.rayleigh(alphaM, betaK, betaKinit, betaKcomm)
 
 
 Case=Fr_Model[0]
-ops.recorder('Node','-file', Carpeta+'/Node_Dsp__'+str(Case)+'.out', '-time', '-node', 2, '-dof', 1, 2, 3, 'disp')
-ops.recorder('Node','-file', Carpeta+'/Node_Vel__'+str(Case)+'.out', '-time', '-node', 2, '-dof', 1, 2, 3, 'vel')
-ops.recorder('Node','-file', Carpeta+'/Node_Acc__'+str(Case)+'.out', '-time', '-node', 2, '-dof', 1, 2, 3, 'accel')
-ops.recorder('Node','-file', Carpeta+'/Node_AbsAcc__'+str(Case)+'.out', '-timeSeries', 2, 3, '-time', '-node', 1, 2, '-dof', 1, 2, 'accel')
-ops.recorder('Node','-file', Carpeta+'/RBase__'+str(Case)+'.out', '-time', '-node', 1, '-dof', 1, 2, 3, 'reaction')
+ops.recorder('Node','-file', Carpeta+'/Node_Dsp_'+str(Case)+'.out', '-time', '-node', 2, '-dof', 1, 2, 3, 'disp')
+ops.recorder('Node','-file', Carpeta+'/Node_Vel_'+str(Case)+'.out', '-time', '-node', 2, '-dof', 1, 2, 3, 'vel')
+ops.recorder('Node','-file', Carpeta+'/Node_Acc_'+str(Case)+'.out', '-time', '-node', 2, '-dof', 1, 2, 3, 'accel')
+ops.recorder('Node','-file', Carpeta+'/Node_AbsAcc_'+str(Case)+'.out', '-timeSeries', 2, 3, '-time', '-node', 1, 2, '-dof', 1, 2, 'accel')
+ops.recorder('Node','-file', Carpeta+'/RBase_'+str(Case)+'.out', '-time', '-node', 1, '-dof', 1, 2, 3, 'reaction')
 
-ops.recorder('Element','-file', Carpeta+'/Elmt_Frc__'+str(Case)+'.out', '-time', '-ele', 1, 'force')
-ops.recorder('Element','-file', Carpeta+'/Elmt_Def__'+str(Case)+'.out', '-time', '-ele', 1, 'basicDeformation')
-ops.recorder('Element','-file', Carpeta+'/Elmt_N__'+str(Case)+'.out', '-time', '-ele', 1, 'frictionModel','normalForce')
-ops.recorder('Element','-file', Carpeta+'/Elmt_Vel__'+str(Case)+'.out', '-time', '-ele', 1, 'frictionModel', 'vel')
-ops.recorder('Element','-file', Carpeta+'/Elmt_Ff__'+str(Case)+'.out', '-time', '-ele', 1, 'frictionModel', 'frictionForce')
-ops.recorder('Element','-file', Carpeta+'/Elmt_COF__'+str(Case)+'.out', '-time', '-ele', 1, 'frictionModel', 'COF')
+ops.recorder('Element','-file', Carpeta+'/Elmt_Frc_'+str(Case)+'.out', '-time', '-ele', 1, 'force')
+ops.recorder('Element','-file', Carpeta+'/Elmt_Def_'+str(Case)+'.out', '-time', '-ele', 1, 'basicDeformation')
+ops.recorder('Element','-file', Carpeta+'/Elmt_N_'+str(Case)+'.out', '-time', '-ele', 1, 'frictionModel','normalForce')
+ops.recorder('Element','-file', Carpeta+'/Elmt_Vel_'+str(Case)+'.out', '-time', '-ele', 1, 'frictionModel', 'vel')
+ops.recorder('Element','-file', Carpeta+'/Elmt_Ff_'+str(Case)+'.out', '-time', '-ele', 1, 'frictionModel', 'frictionForce')
+ops.recorder('Element','-file', Carpeta+'/Elmt_COF_'+str(Case)+'.out', '-time', '-ele', 1, 'frictionModel', 'COF')
 
 # ------------------------------
 # Start of analysis generation
@@ -197,6 +198,60 @@ Elmt_Vel=np.loadtxt(Carpeta+'/Elmt_Vel_'+str(Case)+'.out')
 Elmt_Ff=np.loadtxt(Carpeta+'/Elmt_Ff_'+str(Case)+'.out')
 Elmt_COF=np.loadtxt(Carpeta+'/Elmt_COF_'+str(Case)+'.out')
     
+
+
+fig = plt.figure()
+sub1=plt.subplot(3,1,1)
+sub1.set_title('Input: Concepción Maule 2010',fontsize='small')
+sub1.set_ylabel('Acc \n'+r'$[cm/seg^2]$',fontsize='small')
+sub1.set_xlabel('Time [seg]',fontsize='small')
+sub1.tick_params(labelsize='small')
+sub1.grid(True)
+sub1.plot(Time,Acc1)
+
+sub2=plt.subplot(3,1,2)
+sub2.set_ylabel('Axial \n Force \n'+r'$[kN]$',fontsize='small')
+sub2.set_xlabel('Time [seg]',fontsize='small')
+sub2.tick_params(labelsize='small')
+sub2.grid(True)
+sub2.plot(Elmt_N[:,0],Elmt_N[:,1]/1000)
+
+sub3=plt.subplot(3,1,3)
+sub3.set_ylabel('Displ. \n'+r'$[mm]$',fontsize='small')
+sub3.set_xlabel('Time [seg]',fontsize='small')
+sub1.tick_params(labelsize='small')
+sub3.grid(True)
+sub3.plot(Node_Dsp[:,0],Node_Dsp[:,2])
+
+
+
+fig2 = plt.figure()
+sub4=plt.subplot(5, 4,(13,15))
+sub4.set_xlabel('Longitudinal displacement'+r'$[mm]$',fontsize='small')
+sub4.set_ylabel('Long. Force \n'+r'$[kN]$',fontsize='small')
+sub4.tick_params(labelsize='small')
+sub4.grid(True)
+
+
+sub5=plt.subplot(5, 4,16)
+sub5.set_ylabel('Long. displacement'+r'$[mm]$',fontsize='small')
+sub5.set_xlabel('Lateral displacement'+r'$[mm]$',fontsize='small')
+sub5.tick_params(labelsize='small')
+sub5.grid(True)
+
+
+sub6=plt.subplot(5, 4,(17,19))
+sub6.set_xlabel('Lateral displacement'+r'$[mm]$',fontsize='small')
+sub6.set_ylabel('Lateral Force \n'+r'$[kN]$',fontsize='small')
+sub6.tick_params(labelsize='small')
+sub6.grid(True)
+
+
+sub7=plt.subplot(5, 4,20)
+sub7.set_ylabel('Long. force'+r'$[kN]$',fontsize='small')
+sub7.set_xlabel('Lateral force'+r'$[kN]$',fontsize='small')
+sub7.tick_params(labelsize='small')
+sub7.grid(True)
 
 
 
