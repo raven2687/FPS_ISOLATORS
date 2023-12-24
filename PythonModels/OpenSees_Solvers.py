@@ -29,7 +29,7 @@ def Solve_System(dt,dtAna,dtMin,dtMax,ok,tCurrent,tFinal,Tol):
                     else:
                         ops.algorithm(algorithm[j])
                     print('test: ',test[i],' Algorithm: ',algorithm[j],' ok=',ok)
-                    ops.test(test[i], Tol, 1000)
+                    ops.test(test[i], Tol, 10000)
                     while ok!=0 and dtAna/2>=dtMin:
                         ok = ops.analyze(1,dtAna)
                         if ok!=0:

@@ -35,31 +35,34 @@ def Plot_max(Xvalues,Yvalues,Label,Elem,size):
 ##############################################################################
 # Create folder to save results
 ##############################################################################
-Carpeta='Frictional_Models_1GDL';		# Output folder
+Carpeta='Frictional_Models_1GDL_Model1';		# Output folder
 if not os.path.exists(Carpeta):
     os.makedirs(Carpeta)
 
 ##############################################################################
-# Load Register
+# Sinusoidal Input
 ##############################################################################
-Reg_Concepcion = loadmat('CONCEPCION_MAULE_2010.mat')
-dt=Reg_Concepcion['Dt']['Ch1'][0][0][0][0]
-Acc1=Reg_Concepcion['Acc']['Ch1'][0][0][0]*U.cm/U.sec**2
-Acc2=Reg_Concepcion['Acc']['Ch3'][0][0][0]*U.cm/U.sec**2
-npts=Acc1.size
-Time=np.arange(0,npts*dt,dt)
-tmax=Time.max()
+g=9.807*U.m/U.sec**2
+GMdirection=1;			    # ground-motion direction
+GMSineAccAmpl=0.4*g;	    # sine ground-motion acceleration amplitude
+TPeriodSine=1;	            # period of input sine wave
+DurationSine=3;	            # duration of input sine wave
+DtAnalysis=0.01;	        # time-step Dt for lateral analysis
+TmaxAnalysis=10;	        # maximum duration of ground-motion analysis
+IDloadTag=400;	            # for uniformSupport excitation
+DtGround=0.005;	            # time-step Dt for input grond motion
+omegaSine=2*np.pi/TPeriodSine;
+vel0=GMSineAccAmpl*(-1)/omegaSine;
+    
 ##############################################################################
 # Create model
 ##############################################################################
 ops.wipe()
 ops.model('basic', '-ndm', 2 ,'-ndf', 3)
 
-# Define geometry for model
-g=9.807*U.m/U.sec**2
-P=80*U.kN
-m=P/g*U.kg
-
+# Define model loads
+m=100*U.Ton;
+P=m*g;
 # Geometry
 ops.node(1,0.0,0.0)
 ops.node(2,0.0,0.0)
@@ -78,7 +81,7 @@ Lv=50*U.mm
 
 kvc=Ev*Av/Lv;
 
-xi=0.02
+xi=0.00
 cv=2*xi*np.sqrt(kvc/m)
 ops.uniaxialMaterial('Elastic',1,kvc,cv);
 ops.uniaxialMaterial('Elastic',2,0.0);

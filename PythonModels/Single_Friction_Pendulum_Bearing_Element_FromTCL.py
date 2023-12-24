@@ -19,19 +19,6 @@ from units import SI_m_units as U
 from scipy.io import loadmat
 from OpenSees_Solvers import Solve_System
 
-plt.close('all')
-
-##############################################################################
-# Create folder to save results
-##############################################################################
-def Plot_max(Xvalues,Yvalues,Label,Elem,size):
-    Ymax=np.max(abs(Yvalues))
-    Ypos=np.argmax(abs(Yvalues))
-    Xmax=Xvalues[Ypos]
-    Ymax=Yvalues[Ypos]
-    Elem.text(Xmax,Ymax,Label+str(np.char.mod('%3.3f',Ymax)),verticalalignment='center')
-    Elem.scatter(Xmax,Ymax,size)
-    return Ymax,Xmax
 ##############################################################################
 # Create folder to save results
 ##############################################################################
@@ -45,10 +32,10 @@ if not os.path.exists(Carpeta):
 Reg_Concepcion = loadmat('CONCEPCION_MAULE_2010.mat')
 dt=Reg_Concepcion['Dt']['Ch1'][0][0][0][0]
 Acc1=Reg_Concepcion['Acc']['Ch1'][0][0][0]*U.cm/U.sec**2
-Acc2=Reg_Concepcion['Acc']['Ch3'][0][0][0]*U.cm/U.sec**2
+Acc2=Reg_Concepcion['Acc']['Ch2'][0][0][0]*U.cm/U.sec**2
 npts=Acc1.size
 Time=np.arange(0,npts*dt,dt)
-tmax=Time.max()
+
 ##############################################################################
 # Create model
 ##############################################################################
@@ -57,13 +44,12 @@ ops.model('basic', '-ndm', 2 ,'-ndf', 3)
 
 # Define geometry for model
 g=9.807*U.m/U.sec**2
-P=80*U.kN
+P=160*U.Tonf
 m=P/g*U.kg
-
+masa=[m, m, 0]
 # Geometry
 ops.node(1,0.0,0.0)
-ops.node(2,0.0,0.0)
-ops.mass(2,*[m, m,0.0])
+ops.node(2,0.0,0.0,'-mass',*masa)
 
 # Applying kinematic boundary condition
 ops.fix(1,1,1,1);
@@ -71,13 +57,7 @@ ops.fix(2,0,0,1);
 
 #---------------------------------------------------
 # Define material models
-
-Ev=2.1e6*U.kgf/U.cm**2;
-Av=(250*U.mm)**2*np.pi/4;
-Lv=50*U.mm
-
-kvc=Ev*Av/Lv;
-
+kvc=2.1e6*U.kgf/U.cm**2
 xi=0.02
 cv=2*xi*np.sqrt(kvc/m)
 ops.uniaxialMaterial('Elastic',1,kvc,cv);
@@ -95,7 +75,7 @@ frnTag=[1,2,3,4];
 ops.frictionModel(Fr_Model[0],frnTag[0], mu1)
 delta_1=1*U.mm
 kInit=P/delta_1
-Reff=155*U.cm
+Reff=160*U.cm
 ops.element('singleFPBearing',1,1,2,frnTag[0],Reff,kInit,'-P',1,'-Mz',2,'-orient',0,1,0,-1,0,0)
 #---------------------------------------------------
 # Applying static vertical load
@@ -189,7 +169,7 @@ ops.system('BandGeneral')
 # create the constraint handler
 ops.constraints('Plain')
 # create the convergence test
-Tol=1.0e-0
+Tol=1.0e-12
 ops.test('NormDispIncr',Tol,100)
 # create the solution algorithm
 ops.algorithm('Newton');
@@ -222,104 +202,61 @@ Elmt_Vel=np.loadtxt(Carpeta+'/Elmt_Vel_'+str(Case)+'.out')
 Elmt_Ff=np.loadtxt(Carpeta+'/Elmt_Ff_'+str(Case)+'.out')
 Elmt_COF=np.loadtxt(Carpeta+'/Elmt_COF_'+str(Case)+'.out')
     
-
-# ------------------------------
-# Plot 1
-# ------------------------------
 fig = plt.figure()
-sub1=plt.subplot(3,2,1)
-sub1.set_title('Input: Concepción Maule 2010 N-S',fontsize='small')
-sub1.set_ylabel('Acc \n'+r'$[g]$',fontsize='small')
+sub1=plt.subplot(3,1,1)
+sub1.set_title('Input: Concepción Maule 2010',fontsize='small')
+sub1.set_ylabel('Acc \n'+r'$[cm/seg^2]$',fontsize='small')
 sub1.set_xlabel('Time [seg]',fontsize='small')
 sub1.tick_params(labelsize='small')
 sub1.grid(True)
-sub1.plot(Time,Acc1/g,label=r'$\ddot{u}_{g1}$',color='k', linewidth=0.5)
-sub1.legend()
-Ymax,Xmax=Plot_max(Time,Acc1/g,r'$a_{max}$=',sub1,12)
-sub1.set_xlim((0, tFinal))
-sub1.set_ylim((-1.2*Ymax, 1.2*Ymax))
+sub1.plot(Time,Acc1)
 
-
-
-sub2=plt.subplot(3,2,2)
-sub2.set_title('Input: Concepción Maule 2010 E-O',fontsize='small')
-sub2.set_ylabel('Acc \n'+r'$[g]$',fontsize='small')
+sub2=plt.subplot(3,1,2)
+sub2.set_ylabel('Axial \n Force \n'+r'$[kN]$',fontsize='small')
 sub2.set_xlabel('Time [seg]',fontsize='small')
 sub2.tick_params(labelsize='small')
 sub2.grid(True)
-sub2.plot(Time,Acc2/g,label=r'$\ddot{u}_{g2}$',color='k', linewidth=0.5)
-sub2.set_xlim((0, tFinal))
-sub2.legend()
-Ymax,Xmax=Plot_max(Time,Acc2/g,r'$a_{max}$=',sub2,12)
-sub2.set_xlim((0, tFinal))
-sub2.set_ylim((-1.2*Ymax, 1.2*Ymax))
+sub2.plot(Elmt_N[:,0],Elmt_N[:,1]/1000)
 
-
-
-sub3=plt.subplot(3,2,(3,4))
-sub3.set_ylabel('Axial \n Force \n'+r'$[kN]$',fontsize='small')
+sub3=plt.subplot(3,1,3)
+sub3.set_ylabel('Displ. \n'+r'$[mm]$',fontsize='small')
 sub3.set_xlabel('Time [seg]',fontsize='small')
-sub3.tick_params(labelsize='small')
+sub1.tick_params(labelsize='small')
 sub3.grid(True)
-sub3.plot(Elmt_N[:,0],Elmt_N[:,1]/1000)
-Ymax,Xmax=Plot_max(Elmt_N[:,0],Elmt_N[:,1]/1000,r'$P_{max}$=',sub3,12)
-sub3.set_xlim((0, tFinal))
-sub3.set_ylim((-1.2*Ymax, 1.2*Ymax))
+sub3.plot(Node_Dsp[:,0],Node_Dsp[:,2])
 
-sub4=plt.subplot(3,2,(5,6))
-sub4.set_ylabel('Displ. \n'+r'$[mm]$',fontsize='small')
-sub4.set_xlabel('Time [seg]',fontsize='small')
-sub4.tick_params(labelsize='small')
-sub4.grid(True)
-sub4.plot(Node_Dsp[:,0],Node_Dsp[:,1]*1000, label=r'$u_1$')
-sub4.plot(Node_Dsp[:,0],Node_Dsp[:,2]*1000, label=r'$u_2$')
-sub4.legend()
-Ymax,Xmax=Plot_max(Node_Dsp[:,0],Node_Dsp[:,1]*1000,r'$\delta_{max}$=',sub4,12)
-sub4.set_xlim((0, tFinal))
-sub4.set_ylim((-1.2*Ymax, 1.2*Ymax))
 
-# ------------------------------
-# GRAFICO 2
-# ------------------------------
-
-an = np.linspace(0, 2 * np.pi, 100)
-rd=1.2*max([abs(Node_Dsp[:,1]).max(),abs(Node_Dsp[:,2]).max()])*1000
-rf=1.2*max([abs(Elmt_Frc[:,1]).max(),abs(Elmt_Frc[:,2]).max()])/1000
 
 fig2 = plt.figure()
-sub4=plt.subplot(2, 4,(1,3))
+sub4=plt.subplot(5, 4,(13,15))
 sub4.set_xlabel('Longitudinal displacement'+r'$[mm]$',fontsize='small')
 sub4.set_ylabel('Long. Force \n'+r'$[kN]$',fontsize='small')
 sub4.tick_params(labelsize='small')
 sub4.grid(True)
-sub4.plot(Node_Dsp[:,1]*1000,Elmt_Frc[:,4]/1000)
 
 
-sub5=plt.subplot(2, 4,4)
+sub5=plt.subplot(5, 4,16)
 sub5.set_ylabel('Long. displacement'+r'$[mm]$',fontsize='small')
 sub5.set_xlabel('Lateral displacement'+r'$[mm]$',fontsize='small')
 sub5.tick_params(labelsize='small')
 sub5.grid(True)
-sub5.axis('equal')
-sub5.plot(rd * np.cos(an), rd * np.sin(an),c='gray')
-sub5.plot(Node_Dsp[:,1]*1000,Node_Dsp[:,2]*1000)
 
 
-sub6=plt.subplot(2, 4,(5,7))
+sub6=plt.subplot(5, 4,(17,19))
 sub6.set_xlabel('Lateral displacement'+r'$[mm]$',fontsize='small')
 sub6.set_ylabel('Lateral Force \n'+r'$[kN]$',fontsize='small')
 sub6.tick_params(labelsize='small')
 sub6.grid(True)
-sub6.plot(Node_Dsp[:,2]*1000,Elmt_Frc[:,5]/1000)
 
-sub7=plt.subplot(2, 4,8)
+
+sub7=plt.subplot(5, 4,20)
 sub7.set_ylabel('Long. force'+r'$[kN]$',fontsize='small')
 sub7.set_xlabel('Lateral force'+r'$[kN]$',fontsize='small')
 sub7.tick_params(labelsize='small')
 sub7.grid(True)
-sub7.axis('equal')
-sub7.plot(rf * np.cos(an), rf * np.sin(an))
-sub7.plot(Elmt_Frc[:,1]/1000,Elmt_Frc[:,2]/1000)
+
+
+
 
 
 
